@@ -1,0 +1,31 @@
+--- 
+
+- hosts: localhost
+  tasks: 
+    - block: 
+      - name: "Check if vscode already installed"
+        shell: "which code"
+        register: which_code
+      - name: "Install vscode (mac)"
+        homebrew_cask: 
+          name: visual-studio-code
+          state: present
+        when: which_code is failed
+      when: ansible_distribution == 'MacOSX'
+    - block: 
+      - name: "Check if code is installed"
+        shell: "dpkg-query -W 'code'"
+        ignore_errors: yes
+        register: code_check
+      - name: "Configure code's key"
+        become: yes
+        apt_key:
+          url: "https://packages.microsoft.com/keys/microsoft.asc"
+          state: present
+      - name: "Install code"
+        become: yes
+        apt:
+          deb: "https://go.microsoft.com/fwlink/?LinkID=760868"
+          state: present
+        when: code_check is failed
+      when: ansible_os_family == 'Debian'
